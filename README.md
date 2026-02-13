@@ -1,0 +1,2 @@
+# MazeAlgorithmVisualizer
+迷宫生成算法和寻路算法的可视化工具
