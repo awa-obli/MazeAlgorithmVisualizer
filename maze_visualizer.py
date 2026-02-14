@@ -5,9 +5,11 @@ import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 import threading
 import time
+import webbrowser
 from maze_generator import MazeGenerator
 from path_finder import PathFinder
 from maze_codec import encode_maze_to_base64, decode_base64_to_maze
+from texts import ALGORITHM_INFO, ABOUT_INFO
 
 
 class MazeVisualizer:
@@ -460,13 +462,22 @@ class MazeVisualizer:
 
     def update_cell(self, x, y, cell_type):
         """更新单元格显示"""
-        cell_id = self.canvas.find_withtag(f"cell_{x}_{y}")[0]
+        # 保存状态
         self.cell_states[(x, y)] = cell_type
-        self.canvas.itemconfig(cell_id, fill=self.colors[cell_type])
+
+        # 让主线程在空闲时执行GUI更新，保证线程安全
+        self.root.after_idle(self._do_update_cell, x, y)
 
         self.check_pause()
-
         time.sleep(self.animation_speed / 1000)
+
+    def _do_update_cell(self, x, y):
+        """执行GUI更新"""
+        cell_id = self.canvas.find_withtag(f"cell_{x}_{y}")
+        if cell_id:
+            cell_type = self.cell_states.get((x, y))
+            if cell_type:
+                self.canvas.itemconfig(cell_id[0], fill=self.colors[cell_type])
 
     def generate_maze(self):
         """生成迷宫"""
@@ -947,12 +958,12 @@ class MazeVisualizer:
         # 标题
         ttk.Label(
             content_frame,
-            text="🧩 迷宫算法介绍",
+            text=ALGORITHM_INFO["title"],
             font=('Segoe UI', 16, 'bold')
         ).pack()
         ttk.Label(
             content_frame,
-            text="by awa",
+            text=ALGORITHM_INFO["subtitle"],
             font=('Segoe UI', 10),
             foreground="gray"
         ).pack(pady=(0, 10))
@@ -960,30 +971,16 @@ class MazeVisualizer:
         ttk.Separator(content_frame, orient='horizontal').pack(fill=tk.X, pady=10)
 
         # ========== 迷宫生成算法 ==========
-        gen_frame = ttk.LabelFrame(content_frame, text="📌 迷宫生成算法", padding=15)
+        gen_frame = ttk.LabelFrame(content_frame, text=ALGORITHM_INFO["generation"]["title"], padding=15)
         gen_frame.pack(fill=tk.X, pady=10)
 
         # ----- DFS生成 -----
-        dfs_gen_frame = ttk.LabelFrame(gen_frame, text="1. 深度优先搜索 (DFS)", padding=12)
+        dfs_gen_frame = ttk.LabelFrame(gen_frame, text=ALGORITHM_INFO["generation"]["dfs"]["title"], padding=12)
         dfs_gen_frame.pack(fill=tk.X, pady=5)
-
-        dfs_gen_text = """核心思想：随机深度优先遍历，从起点开始随机选择方向前进，遇到死路时回溯，直到所有格子都被访问。
-
-执行流程：
-1. 初始化迷宫，将所有内部行列坐标为偶数的格子设为墙壁
-2. 选择起始格点压入栈中，标记为已访问
-3. 获取栈顶格点，随机打乱四个方向的顺序
-4. 遍历每个方向：
-   - 若该方向连接的格点的位置在迷宫范围内且未访问
-   - 则打通中间的墙壁，将新格点入栈并标记为已访问
-5. 若当前格点无未访问的相邻格点，则将其出栈
-6. 重复步骤3-5，直到栈为空
-
-特点：迷宫分支较少，死路较多，难度大。"""
 
         dfs_gen_label = ttk.Label(
             dfs_gen_frame, 
-            text=dfs_gen_text.strip(),
+            text=ALGORITHM_INFO["generation"]["dfs"]["content"].strip(),
             font=('Segoe UI', 10),
             wraplength=500,
             justify=tk.LEFT
@@ -991,25 +988,12 @@ class MazeVisualizer:
         dfs_gen_label.pack(anchor=tk.W, pady=5)
 
         # ----- Prim生成 -----
-        prim_gen_frame = ttk.LabelFrame(gen_frame, text="2. Prim算法", padding=12)
+        prim_gen_frame = ttk.LabelFrame(gen_frame, text=ALGORITHM_INFO["generation"]["prim"]["title"], padding=12)
         prim_gen_frame.pack(fill=tk.X, pady=5)
-
-        prim_gen_text = """核心思想：最小生成树，维护一个边界墙序列，不断随机打通边界墙，并将新边界墙加入序列，直到连接所有格点。
-
-执行流程：
-1. 初始化迷宫，将所有内部行列坐标为偶数的格子设为墙壁
-2. 选择起始格点，将其所有相邻的墙壁加入候选列表
-3. 从候选列表中随机选择一面墙壁，并将其从候选列表中移除：
-   - 若墙壁连接的另一个格点在迷宫范围内且未访问
-   - 则打通这面墙壁，标记新格点为已访问
-   - 并将新格点相邻的墙壁加入候选列表
-4. 重复步骤3，直到候选列表为空
-
-特点：生成的迷宫结构均匀，分支丰富，无明显的主干道，更接近自然形成的迷宫样式。"""
 
         prim_gen_label = ttk.Label(
             prim_gen_frame,
-            text=prim_gen_text.strip(),
+            text=ALGORITHM_INFO["generation"]["prim"]["content"].strip(),
             font=('Segoe UI', 10),
             wraplength=500,
             justify=tk.LEFT
@@ -1017,25 +1001,12 @@ class MazeVisualizer:
         prim_gen_label.pack(anchor=tk.W, pady=5)
 
         # ----- 递归分割 -----
-        rec_gen_frame = ttk.LabelFrame(gen_frame, text="3. 递归分割", padding=12)
+        rec_gen_frame = ttk.LabelFrame(gen_frame, text=ALGORITHM_INFO["generation"]["recursive"]["title"], padding=12)
         rec_gen_frame.pack(fill=tk.X, pady=5)
-
-        rec_gen_text = """思路：将空间用十字分成四个子空间，在三面墙上挖洞，递归分割直到空间不足。
-
-流程：
-1. 初始化迷宫，内部均为空地
-2. 递归函数：
-   - 终止条件：子空间行列范围不足3个格点
-   - 确定分割位置（偶数）
-   - 建造十字墙壁
-   - 随机打通三面墙（奇数，避免被新十字墙壁阻塞）
-   - 递归分割四个子空间
-
-特点：生成速度快，生成的迷宫对称性强，结构规整，具有明显的房间感，通常比较简单。"""
 
         rec_gen_label = ttk.Label(
             rec_gen_frame,
-            text=rec_gen_text.strip(),
+            text=ALGORITHM_INFO["generation"]["recursive"]["content"].strip(),
             font=('Segoe UI', 10),
             wraplength=500,
             justify=tk.LEFT
@@ -1043,31 +1014,16 @@ class MazeVisualizer:
         rec_gen_label.pack(anchor=tk.W, pady=5)
 
         # ========== 迷宫寻路算法 ==========
-        find_frame = ttk.LabelFrame(content_frame, text="📌 迷宫寻路算法", padding=15)
+        find_frame = ttk.LabelFrame(content_frame, text=ALGORITHM_INFO["pathfinding"]["title"], padding=15)
         find_frame.pack(fill=tk.X, pady=10)
 
         # ----- DFS寻路 -----
-        dfs_find_frame = ttk.LabelFrame(find_frame, text="1. 深度优先搜索 (DFS)", padding=12)
+        dfs_find_frame = ttk.LabelFrame(find_frame, text=ALGORITHM_INFO["pathfinding"]["dfs"]["title"], padding=12)
         dfs_find_frame.pack(fill=tk.X, pady=5)
-
-        dfs_find_text = """思路：从起点开始沿一个方向走到底，走不通就回溯，尝试另一方向，直到找到终点。
-
-流程：
-1. 将起点压栈，记录已访问
-2. 栈不为空：
-   - 获取当前栈顶节点
-   - 打乱四个方向顺序
-   - 遍历方向：若相邻节点在迷宫范围内、为通路且未访问 →
-       入栈、记录已访问
-       - 若到达终点 → 返回当前栈作为路径
-   - 若无可访问方向 → 出栈（回溯）
-3. 栈空 -> 寻路失败
-
-特点：实现简单，但找到的不一定是最短路径"""
 
         dfs_find_label = ttk.Label(
             dfs_find_frame,
-            text=dfs_find_text.strip(),
+            text=ALGORITHM_INFO["pathfinding"]["dfs"]["content"].strip(),
             font=('Segoe UI', 10),
             wraplength=500,
             justify=tk.LEFT
@@ -1075,25 +1031,12 @@ class MazeVisualizer:
         dfs_find_label.pack(anchor=tk.W, pady=5)
 
         # ----- BFS寻路 -----
-        bfs_find_frame = ttk.LabelFrame(find_frame, text="2. 广度优先搜索 (BFS)", padding=12)
+        bfs_find_frame = ttk.LabelFrame(find_frame, text=ALGORITHM_INFO["pathfinding"]["bfs"]["title"], padding=12)
         bfs_find_frame.pack(fill=tk.X, pady=5)
-
-        bfs_find_text = """思路：从起点开始逐层向外扩散搜索，保证找到的路径是最短路径（步数最少）。
-
-流程：
-1. 初始化队列，将起点入队，记录前驱节点
-2. 队列不为空：
-   - 取出队首节点
-   - 遍历四个方向：若相邻节点在迷宫范围内、为通路且未访问 →
-       入队、记录前驱、标记已访问
-       - 若到达终点 → 回溯前驱构建完整路径并返回
-3. 队列空 -> 寻路失败
-
-特点：保证最短路径，但内存占用较大。"""
 
         bfs_find_label = ttk.Label(
             bfs_find_frame,
-            text=bfs_find_text.strip(),
+            text=ALGORITHM_INFO["pathfinding"]["bfs"]["content"].strip(),
             font=('Segoe UI', 10),
             wraplength=500,
             justify=tk.LEFT
@@ -1101,27 +1044,12 @@ class MazeVisualizer:
         bfs_find_label.pack(anchor=tk.W, pady=5)
 
         # ----- A*寻路 -----
-        astar_find_frame = ttk.LabelFrame(find_frame, text="3. A*算法", padding=12)
+        astar_find_frame = ttk.LabelFrame(find_frame, text=ALGORITHM_INFO["pathfinding"]["astar"]["title"], padding=12)
         astar_find_frame.pack(fill=tk.X, pady=5)
-
-        astar_find_text = """思路：结合曼哈顿距离评估节点优先级，优先探索代价最小（最可能接近终点）的方向。
-
-流程：
-1. 初始化优先队列，加入起点
-2. 优先队列不为空：
-   - 取出估计总代价最小的节点作为当前节点
-   - 若当前节点为终点 → 回溯路径并返回
-   - 遍历四个方向：若相邻节点在范围内且为通路 →
-       计算当前代价 = 之前代价 + 1
-       - 若该节点未被访问过或新代价比之前更小 →
-         把该节点加入到优先队列里，总代价=当前代价+预估代价（曼哈顿距离）
-3. 优先队列空 -> 寻路失败
-
-特点：效率高，路径最优，适合大多数场景下的路径搜索。"""
 
         astar_find_label = ttk.Label(
             astar_find_frame,
-            text=astar_find_text.strip(),
+            text=ALGORITHM_INFO["pathfinding"]["astar"]["content"].strip(),
             font=('Segoe UI', 10),
             wraplength=500,
             justify=tk.LEFT
@@ -1129,7 +1057,7 @@ class MazeVisualizer:
         astar_find_label.pack(anchor=tk.W, pady=5)
 
         # ========== 算法对比表格 ==========
-        table_frame = ttk.LabelFrame(content_frame, text="📊 算法对比", padding=15)
+        table_frame = ttk.LabelFrame(content_frame, text=ALGORITHM_INFO["comparison"]["title"], padding=15)
         table_frame.pack(fill=tk.X, pady=10)
 
         # 创建主框架
@@ -1137,8 +1065,8 @@ class MazeVisualizer:
         main_table_frame.pack(fill=tk.X, pady=5)
 
         # ===== 迷宫生成算法对比 =====
-        gen_table_title = ttk.Label(main_table_frame, text="迷宫生成算法", 
-                                font=('Segoe UI', 11, 'bold'))
+        gen_table_title = ttk.Label(main_table_frame, text=ALGORITHM_INFO["comparison"]["generation"]["title"], 
+                                    font=('Segoe UI', 11, 'bold'))
         gen_table_title.pack(anchor=tk.W, pady=(0, 5))
 
         # 生成算法表格框架
@@ -1146,8 +1074,8 @@ class MazeVisualizer:
         gen_table.pack(fill=tk.X, pady=(0, 10))
 
         # 表头
-        headers = ["算法", "核心思想", "特点"]
-        col_widths = [80, 120, 200, 120]
+        headers = ALGORITHM_INFO["comparison"]["generation"]["headers"]
+        col_widths = [80, 120, 200, 120]  # 列宽保持不变
 
         for i, header in enumerate(headers):
             label = tk.Label(gen_table, text=header, font=('Segoe UI', 10, 'bold'),
@@ -1155,38 +1083,25 @@ class MazeVisualizer:
                             width=col_widths[i]//6, anchor=tk.W, relief='flat')
             label.grid(row=0, column=i, sticky='ew', padx=1, pady=1)
 
-        # DFS数据
-        dfs_data = ["DFS", "随机深度优先", "• 死路多，分支少\n• 难度高"]
-        for i, data in enumerate(dfs_data):
-            bg_color = '#ecf0f1'
-            label = tk.Label(gen_table, text=data, font=('Segoe UI', 9),
-                            bg=bg_color, padx=8, pady=6, width=col_widths[i]//6,
-                            anchor=tk.W, relief='flat', justify=tk.LEFT)
-            label.grid(row=1, column=i, sticky='ew', padx=1, pady=1)
-
-        # Prim数据
-        prim_data = ["Prim", "随机最小生成树", "• 分支均匀，岔路多\n• 结构自然"]
-        for i, data in enumerate(prim_data):
-            bg_color = '#f8f9f9'
-            label = tk.Label(gen_table, text=data, font=('Segoe UI', 9),
-                            bg=bg_color, padx=8, pady=6, width=col_widths[i]//6,
-                            anchor=tk.W, relief='flat', justify=tk.LEFT)
-            label.grid(row=2, column=i, sticky='ew', padx=1, pady=1)
-
-        # 递归分割数据
-        rec_data = ["递归分割", "分治建墙挖洞", "• 结构规整\n• 生成速度快"]
-        for i, data in enumerate(rec_data):
-            bg_color = '#ecf0f1'
-            label = tk.Label(gen_table, text=data, font=('Segoe UI', 9),
-                            bg=bg_color, padx=8, pady=6, width=col_widths[i]//6,
-                            anchor=tk.W, relief='flat', justify=tk.LEFT)
-            label.grid(row=3, column=i, sticky='ew', padx=1, pady=1)
+        # 生成算法数据行
+        gen_data = ALGORITHM_INFO["comparison"]["generation"]["data"]
+        for row_idx, algo_data in enumerate(gen_data, 1):
+            # 交替背景色
+            bg_color = '#ecf0f1' if row_idx % 2 == 1 else '#f8f9f9'
+            
+            row_data = [algo_data["algorithm"], algo_data["idea"], algo_data["features"]]
+            for col_idx, data in enumerate(row_data):
+                label = tk.Label(gen_table, text=data, font=('Segoe UI', 9),
+                                bg=bg_color, padx=8, pady=6, width=col_widths[col_idx]//6,
+                                anchor=tk.W, relief='flat', justify=tk.LEFT)
+                label.grid(row=row_idx, column=col_idx, sticky='ew', padx=1, pady=1)
 
         # 添加分隔线
         ttk.Separator(main_table_frame, orient='horizontal').pack(fill=tk.X, pady=15)
 
         # ===== 迷宫寻路算法对比 =====
-        find_table_title = ttk.Label(main_table_frame, text="迷宫寻路算法", font=('Segoe UI', 11, 'bold'))
+        find_table_title = ttk.Label(main_table_frame, text=ALGORITHM_INFO["comparison"]["pathfinding"]["title"], 
+                                    font=('Segoe UI', 11, 'bold'))
         find_table_title.pack(anchor=tk.W, pady=(0, 5))
 
         # 寻路算法表格框架
@@ -1194,8 +1109,8 @@ class MazeVisualizer:
         find_table.pack(fill=tk.X, pady=(0, 5))
 
         # 表头
-        find_headers = ["算法", "核心思想", "特点"]
-        find_col_widths = [80, 120, 200, 100]
+        find_headers = ALGORITHM_INFO["comparison"]["pathfinding"]["headers"]
+        find_col_widths = [80, 120, 200, 100]  # 列宽保持不变
 
         for i, header in enumerate(find_headers):
             label = tk.Label(find_table, text=header, font=('Segoe UI', 10, 'bold'),
@@ -1203,40 +1118,26 @@ class MazeVisualizer:
                             width=find_col_widths[i]//6, anchor=tk.W, relief='flat')
             label.grid(row=0, column=i, sticky='ew', padx=1, pady=1)
 
-        # DFS寻路数据
-        dfs_find_data = ["DFS", "一条路走到黑", "• 一条路走到黑\n• 不一定是最短路径\n• 内存占用小"]
-        for i, data in enumerate(dfs_find_data):
-            bg_color = '#ecf0f1'
-            label = tk.Label(find_table, text=data, font=('Segoe UI', 9),
-                            bg=bg_color, padx=8, pady=6, width=find_col_widths[i]//6,
-                            anchor=tk.W, relief='flat', justify=tk.LEFT)
-            label.grid(row=1, column=i, sticky='ew', padx=1, pady=1)
+        # 寻路算法数据行
+        find_data = ALGORITHM_INFO["comparison"]["pathfinding"]["data"]
+        for row_idx, algo_data in enumerate(find_data, 1):
+            # 交替背景色
+            bg_color = '#ecf0f1' if row_idx % 2 == 1 else '#f8f9f9'
 
-        # BFS寻路数据
-        bfs_find_data = ["BFS", "层层扩散", "• 地毯式搜索\n• 保证最短路径\n• 内存占用大"]
-        for i, data in enumerate(bfs_find_data):
-            bg_color = '#f8f9f9'
-            label = tk.Label(find_table, text=data, font=('Segoe UI', 9),
-                            bg=bg_color, padx=8, pady=6, width=find_col_widths[i]//6,
-                            anchor=tk.W, relief='flat', justify=tk.LEFT)
-            label.grid(row=2, column=i, sticky='ew', padx=1, pady=1)
-
-        # A*寻路数据
-        astar_find_data = ["A*", "启发式引导", "• 有方向地搜索\n• 保证最短路径\n• 效率最高"]
-        for i, data in enumerate(astar_find_data):
-            bg_color = '#ecf0f1'
-            label = tk.Label(find_table, text=data, font=('Segoe UI', 9),
-                            bg=bg_color, padx=8, pady=6, width=find_col_widths[i]//6,
-                            anchor=tk.W, relief='flat', justify=tk.LEFT)
-            label.grid(row=3, column=i, sticky='ew', padx=1, pady=1)
+            row_data = [algo_data["algorithm"], algo_data["idea"], algo_data["features"]]
+            for col_idx, data in enumerate(row_data):
+                label = tk.Label(find_table, text=data, font=('Segoe UI', 9),
+                                bg=bg_color, padx=8, pady=6, width=find_col_widths[col_idx]//6,
+                                anchor=tk.W, relief='flat', justify=tk.LEFT)
+                label.grid(row=row_idx, column=col_idx, sticky='ew', padx=1, pady=1)
 
         # ========== 关闭按钮 ==========
         btn_frame = ttk.Frame(content_frame)
         btn_frame.pack(pady=(20, 10))
         ttk.Button(
-            btn_frame, 
-            text="关闭", 
-            command=info_window.destroy, 
+            btn_frame,
+            text="关闭",
+            command=info_window.destroy,
             width=15
         ).pack()
 
@@ -1296,12 +1197,12 @@ class MazeVisualizer:
         # 标题
         ttk.Label(
             content_frame,
-            text="🧩 迷宫算法可视化工具",
+            text=ABOUT_INFO["title"],
             font=('Segoe UI', 16, 'bold')
         ).pack()
         ttk.Label(
             content_frame,
-            text="by awa",
+            text=ABOUT_INFO["subtitle"],
             font=('Segoe UI', 10),
             foreground="gray"
         ).pack(pady=(0, 10))
@@ -1312,21 +1213,16 @@ class MazeVisualizer:
         info_frame = ttk.Frame(content_frame)
         info_frame.pack(fill=tk.X, pady=5)
         ttk.Label(info_frame, text="版本:", font=('Segoe UI', 10, 'bold')).pack(side=tk.LEFT)
-        ttk.Label(info_frame, text="1.4.5", font=('Segoe UI', 10)).pack(side=tk.LEFT)
+        ttk.Label(info_frame, text=ABOUT_INFO["version"], font=('Segoe UI', 10)).pack(side=tk.LEFT)
 
+        # 项目介绍
         intro_frame = ttk.LabelFrame(content_frame, text="📋 项目介绍", padding=15)
         intro_frame.pack(fill=tk.X, pady=10)
-
-        intro_text = """
-本项目是一个用于学习和演示迷宫生成算法与寻路算法的交互式工具，使用tkinter编写。
-将抽象算法以可视化的方式逐步执行，帮助初学者深入理解算法思想，降低学习门槛。
-        """
-
         intro_label = ttk.Label(
             intro_frame, 
-            text=intro_text.strip(),
+            text=ABOUT_INFO["introduction"].strip(),
             font=('Segoe UI', 10),
-            wraplength=420,  # 文本换行宽度
+            wraplength=420,
             justify=tk.LEFT
         )
         intro_label.pack(fill=tk.X)
@@ -1334,60 +1230,29 @@ class MazeVisualizer:
         # 功能介绍
         features_frame = ttk.LabelFrame(content_frame, text="✨ 功能介绍", padding=10)
         features_frame.pack(fill=tk.X, pady=15)
-
-        features = [
-            "• 多种迷宫生成算法：DFS、Prim、递归分割",
-            "• 多种寻路算法：DFS、BFS、A*",
-            "• 实时可视化算法执行过程",
-            "• 可编辑迷宫（左键切换墙壁/路径）",
-            "• 自定义起点/终点（右键点击路径）",
-            "• 迷宫编码/解码，方便分享",
-            "• 缩放、平移查看功能",
-            "• 可调节动画速度",
-            "• 可暂停动画",
-            "• 支持超大迷宫（最大101×101）"
-        ]
-
-        for feature in features:
+        for feature in ABOUT_INFO["features"]:
             ttk.Label(features_frame, text=feature, font=('Segoe UI', 10)).pack(anchor=tk.W, pady=1)
 
         # 使用提示
         tips_frame = ttk.LabelFrame(content_frame, text="💡 操作说明", padding=12)
         tips_frame.pack(fill=tk.X, pady=10)
-
-        tips = [
-            "• 鼠标滚轮：垂直滚动画布",
-            "• Ctrl + 滚轮：缩放画布",
-            "• 鼠标中键拖拽：平移画布",
-            "• 左键点击/拖拽：编辑墙壁",
-            "• 右键点击路径：设置起点/终点"
-        ]
-
-        for tip in tips:
+        for tip in ABOUT_INFO["tips"]:
             ttk.Label(tips_frame, text=tip, font=('Segoe UI', 10)).pack(anchor=tk.W, pady=1)
 
         # 版权信息
         copyright_frame = ttk.Frame(content_frame)
         copyright_frame.pack(pady=(15, 5))
-
-        copyright_text1 = ttk.Label(
+        ttk.Label(
             copyright_frame,
-            text="© 2026 迷宫算法可视化工具",
+            text=ABOUT_INFO["copyright"],
             font=('Segoe UI', 9),
             foreground="gray",
             justify=tk.CENTER
-        )
-        copyright_text1.pack()
+        ).pack()
 
         link_frame = ttk.Frame(copyright_frame)
         link_frame.pack()
-
-        ttk.Label(
-            link_frame,
-            text="本软件为",
-            font=('Segoe UI', 9),
-            foreground="gray"
-        ).pack(side=tk.LEFT)
+        ttk.Label(link_frame, text="本软件为", font=('Segoe UI', 9), foreground="gray").pack(side=tk.LEFT)
 
         link_label = tk.Label(
             link_frame,
@@ -1397,13 +1262,11 @@ class MazeVisualizer:
             cursor='hand2',
         )
         link_label.pack(side=tk.LEFT)
-
+        
         def open_link(event):
-            import webbrowser
-            webbrowser.open("https://github.com/awa-obli/MazeAlgorithmVisualizer")
-
+            webbrowser.open(ABOUT_INFO["github_url"])
         link_label.bind('<Button-1>', open_link)
-
+        
         ttk.Label(
             link_frame,
             text="，遵循 MIT 许可证",

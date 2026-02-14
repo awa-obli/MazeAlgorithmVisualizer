@@ -149,6 +149,7 @@ class MazeGenerator:
             for wall in random.sample(walls, 3):
                 x, y = wall
                 self.maze[y][x] = 0
+                self.update_cell(x, y, 'current')
                 self.update_cell(x, y, 'path')
 
             # 递归处理子空间
