@@ -79,44 +79,44 @@ class MazeGenerator:
 
         start = (random.randrange(1, x_size - 1, 2), random.randrange(1, y_size - 1, 2))
 
-        sequence = [start]
+        sequence = []
         visited = {start}
 
         direction = [
-            lambda x, y: (x - 2, y),
-            lambda x, y: (x, y - 2),
-            lambda x, y: (x + 2, y),
-            lambda x, y: (x, y + 2)
+            lambda x, y: (x - 1, y),
+            lambda x, y: (x, y - 1),
+            lambda x, y: (x + 1, y),
+            lambda x, y: (x, y + 1)
         ]
+
+        # 将起点周围的墙加入候选序列，并记录打通方向
+        for dir_ in direction:
+            neighbor = dir_(*start)
+            x, y = neighbor
+            if 0 < x < x_size - 1 and 0 < y < y_size - 1:
+                sequence.append((neighbor, dir_))
+                self.update_cell(*neighbor, 'frontier')
 
         while sequence:
             ind = random.randrange(len(sequence))
-            cur_point = sequence[ind]
-            x1, y1 = cur_point
-            self.update_cell(*cur_point, 'visited')
-
-            random.shuffle(direction)
-            for dir_ in direction:
-                next_point = dir_(x1, y1)
-                x2, y2 = next_point
-
-                if 0 < x2 < x_size - 1 and 0 < y2 < y_size - 1 and next_point not in visited:
-                    # 打通墙壁
-                    wall_x = (x1 + x2) // 2
-                    wall_y = (y1 + y2) // 2
-                    self.maze[wall_y][wall_x] = 0
-
-                    # 可视化
-                    self.update_cell(wall_x, wall_y, 'path')
-                    self.update_cell(x2, y2, 'frontier')
-
-                    sequence.append(next_point)
-                    visited.add(next_point)
-                    break
+            wall, dir_ = sequence[ind]
+            x, y = wall
+            sequence[ind] = sequence[-1]
+            sequence.pop()
+            self.update_cell(x, y, 'current')
+            connect_point = dir_(x, y)
+            if connect_point not in visited:
+                self.maze[y][x] = 0
+                visited.add(connect_point)
+                self.update_cell(x, y, 'path')
+                for dir_ in direction:
+                    neighbor = dir_(*connect_point)
+                    x, y = neighbor
+                    if 0 < x < x_size - 1 and 0 < y < y_size - 1 and dir_(*neighbor) not in visited:
+                        sequence.append((neighbor, dir_))
+                        self.update_cell(*neighbor, 'frontier')
             else:
-                sequence[ind] = sequence[-1]
-                sequence.pop()
-                self.update_cell(*cur_point, 'path')
+                self.update_cell(x, y, 'wall')
 
     def generate_recursive(self):
         """递归分割算法生成迷宫"""
