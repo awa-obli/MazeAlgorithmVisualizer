@@ -100,23 +100,23 @@ class MazeGenerator:
         while sequence:
             ind = random.randrange(len(sequence))
             wall, dir_ = sequence[ind]
-            x, y = wall
+            x1, y1 = wall
             sequence[ind] = sequence[-1]
             sequence.pop()
-            self.update_cell(x, y, 'current')
-            connect_point = dir_(x, y)
+            self.update_cell(x1, y1, 'current')
+            connect_point = dir_(x1, y1)
             if connect_point not in visited:
-                self.maze[y][x] = 0
+                self.maze[y1][x1] = 0
                 visited.add(connect_point)
-                self.update_cell(x, y, 'path')
                 for dir_ in direction:
                     neighbor = dir_(*connect_point)
-                    x, y = neighbor
-                    if 0 < x < x_size - 1 and 0 < y < y_size - 1 and dir_(*neighbor) not in visited:
+                    x2, y2 = neighbor
+                    if 0 < x2 < x_size - 1 and 0 < y2 < y_size - 1 and dir_(*neighbor) not in visited:
                         sequence.append((neighbor, dir_))
                         self.update_cell(*neighbor, 'frontier')
+                self.update_cell(x1, y1, 'path')
             else:
-                self.update_cell(x, y, 'wall')
+                self.update_cell(x1, y1, 'wall')
 
     def generate_recursive(self):
         """递归分割算法生成迷宫"""

@@ -50,7 +50,7 @@ class MazeVisualizer:
             'start': '#2ecc71',
             'end': '#e74c3c',
             'visited': '#3498db',
-            'current': '#f1c40f',
+            'current': '#00ced1',
             'solution': '#9b59b6',
             'frontier': '#e67e22'
         }
