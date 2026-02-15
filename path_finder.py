@@ -97,7 +97,7 @@ class PathFinder:
         came_from = {self.start: None}
         g_score = {self.start: 0}
 
-        while heapq:
+        while open_set:
             current_f, current = heapq.heappop(open_set)
 
             if current == self.end:

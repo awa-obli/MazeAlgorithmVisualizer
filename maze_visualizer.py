@@ -463,22 +463,20 @@ class MazeVisualizer:
 
     def update_cell(self, x, y, cell_type):
         """更新单元格显示"""
-        # 保存状态
-        self.cell_states[(x, y)] = cell_type
-
         # 让主线程在空闲时执行GUI更新，保证线程安全
-        self.root.after_idle(self._do_update_cell, x, y)
+        self.root.after_idle(self._do_update_cell, x, y, cell_type)
 
         self.check_pause()
         time.sleep(self.animation_speed / 1000)
 
-    def _do_update_cell(self, x, y):
+    def _do_update_cell(self, x, y, cell_type):
         """执行GUI更新"""
+        # 保存状态
+        self.cell_states[(x, y)] = cell_type
+
         cell_id = self.canvas.find_withtag(f"cell_{x}_{y}")
         if cell_id:
-            cell_type = self.cell_states.get((x, y))
-            if cell_type:
-                self.canvas.itemconfig(cell_id[0], fill=self.colors[cell_type])
+            self.canvas.itemconfig(cell_id[0], fill=self.colors[cell_type])
 
     def generate_maze(self):
         """生成迷宫"""
