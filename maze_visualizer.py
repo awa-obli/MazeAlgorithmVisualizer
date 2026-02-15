@@ -184,6 +184,7 @@ class MazeVisualizer:
         find_algorithms = [
             ("深度优先 (DFS)", "DFS"),
             ("广度优先 (BFS)", "BFS"),
+            ("Dijkstra算法", "Dijkstra"),
             ("A*算法", "AStar")
         ]
 
@@ -576,6 +577,8 @@ class MazeVisualizer:
             path = finder.find_path_dfs()
         elif algo == "BFS":
             path = finder.find_path_bfs()
+        elif algo == "Dijkstra":
+            path = finder.find_path_dijkstra()
         elif algo == "AStar":
             path = finder.find_path_astar()
 
@@ -974,87 +977,110 @@ class MazeVisualizer:
         gen_frame = ttk.LabelFrame(content_frame, text=ALGORITHM_INFO["generation"]["title"], padding=15)
         gen_frame.pack(fill=tk.X, pady=10)
 
-        # ----- DFS生成 -----
-        dfs_gen_frame = ttk.LabelFrame(gen_frame, text=ALGORITHM_INFO["generation"]["dfs"]["title"], padding=12)
-        dfs_gen_frame.pack(fill=tk.X, pady=5)
+        # 生成算法列表
+        gen_algorithms = [
+            "dfs",
+            "prim",
+            "recursive"
+        ]
 
-        dfs_gen_label = ttk.Label(
-            dfs_gen_frame, 
-            text=ALGORITHM_INFO["generation"]["dfs"]["content"].strip(),
-            font=('Segoe UI', 10),
-            wraplength=500,
-            justify=tk.LEFT
-        )
-        dfs_gen_label.pack(anchor=tk.W, pady=5)
+        for algo_key in gen_algorithms:
+            # 创建算法框架
+            algo_frame = ttk.LabelFrame(
+                gen_frame, 
+                text=ALGORITHM_INFO["generation"][algo_key]["title"], 
+                padding=12
+            )
+            algo_frame.pack(fill=tk.X, pady=5)
 
-        # ----- Prim生成 -----
-        prim_gen_frame = ttk.LabelFrame(gen_frame, text=ALGORITHM_INFO["generation"]["prim"]["title"], padding=12)
-        prim_gen_frame.pack(fill=tk.X, pady=5)
+            # 创建算法说明标签
+            algo_label = ttk.Label(
+                algo_frame,
+                text=ALGORITHM_INFO["generation"][algo_key]["content"].strip(),
+                font=('Segoe UI', 10),
+                wraplength=480,
+                justify=tk.LEFT
+            )
+            algo_label.pack(anchor=tk.W, pady=5)
 
-        prim_gen_label = ttk.Label(
-            prim_gen_frame,
-            text=ALGORITHM_INFO["generation"]["prim"]["content"].strip(),
-            font=('Segoe UI', 10),
-            wraplength=500,
-            justify=tk.LEFT
-        )
-        prim_gen_label.pack(anchor=tk.W, pady=5)
+            # GitHub链接
+            link_frame = ttk.Frame(algo_frame)
+            link_frame.pack(fill=tk.X, pady=(5, 0))
 
-        # ----- 递归分割 -----
-        rec_gen_frame = ttk.LabelFrame(gen_frame, text=ALGORITHM_INFO["generation"]["recursive"]["title"], padding=12)
-        rec_gen_frame.pack(fill=tk.X, pady=5)
+            github_link = tk.Label(
+                link_frame,
+                text="📦 查看源码",
+                font=('Segoe UI', 10, 'underline'),
+                fg='#0066cc',
+                cursor='hand2',
+            )
+            github_link.pack(side=tk.LEFT)
 
-        rec_gen_label = ttk.Label(
-            rec_gen_frame,
-            text=ALGORITHM_INFO["generation"]["recursive"]["content"].strip(),
-            font=('Segoe UI', 10),
-            wraplength=500,
-            justify=tk.LEFT
-        )
-        rec_gen_label.pack(anchor=tk.W, pady=5)
+            github_urls = {
+                'dfs': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/maze_generator.py#L11-L62',
+                'prim': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/maze_generator.py#L64-L118',
+                'recursive': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/maze_generator.py#L120-L160'
+            }
+
+            def make_link_handler(url):
+                return lambda e: webbrowser.open(url)
+
+            github_link.bind('<Button-1>', make_link_handler(github_urls[algo_key]))
 
         # ========== 迷宫寻路算法 ==========
         find_frame = ttk.LabelFrame(content_frame, text=ALGORITHM_INFO["pathfinding"]["title"], padding=15)
         find_frame.pack(fill=tk.X, pady=10)
 
-        # ----- DFS寻路 -----
-        dfs_find_frame = ttk.LabelFrame(find_frame, text=ALGORITHM_INFO["pathfinding"]["dfs"]["title"], padding=12)
-        dfs_find_frame.pack(fill=tk.X, pady=5)
+        # 寻路算法列表
+        find_algorithms = [
+            "dfs",
+            "bfs",
+            "dijkstra",
+            "astar"
+        ]
 
-        dfs_find_label = ttk.Label(
-            dfs_find_frame,
-            text=ALGORITHM_INFO["pathfinding"]["dfs"]["content"].strip(),
-            font=('Segoe UI', 10),
-            wraplength=500,
-            justify=tk.LEFT
-        )
-        dfs_find_label.pack(anchor=tk.W, pady=5)
+        for algo_key in find_algorithms:
+            # 创建算法框架
+            algo_frame = ttk.LabelFrame(
+                find_frame, 
+                text=ALGORITHM_INFO["pathfinding"][algo_key]["title"], 
+                padding=12
+            )
+            algo_frame.pack(fill=tk.X, pady=5)
 
-        # ----- BFS寻路 -----
-        bfs_find_frame = ttk.LabelFrame(find_frame, text=ALGORITHM_INFO["pathfinding"]["bfs"]["title"], padding=12)
-        bfs_find_frame.pack(fill=tk.X, pady=5)
+            # 创建算法说明标签
+            algo_label = ttk.Label(
+                algo_frame,
+                text=ALGORITHM_INFO["pathfinding"][algo_key]["content"].strip(),
+                font=('Segoe UI', 10),
+                wraplength=480,
+                justify=tk.LEFT
+            )
+            algo_label.pack(anchor=tk.W, pady=5)
 
-        bfs_find_label = ttk.Label(
-            bfs_find_frame,
-            text=ALGORITHM_INFO["pathfinding"]["bfs"]["content"].strip(),
-            font=('Segoe UI', 10),
-            wraplength=500,
-            justify=tk.LEFT
-        )
-        bfs_find_label.pack(anchor=tk.W, pady=5)
+            link_frame = ttk.Frame(algo_frame)
+            link_frame.pack(fill=tk.X, pady=(5, 0))
 
-        # ----- A*寻路 -----
-        astar_find_frame = ttk.LabelFrame(find_frame, text=ALGORITHM_INFO["pathfinding"]["astar"]["title"], padding=12)
-        astar_find_frame.pack(fill=tk.X, pady=5)
+            github_link = tk.Label(
+                link_frame,
+                text="📦 查看源码",
+                font=('Segoe UI', 10, 'underline'),
+                fg='#0066cc',
+                cursor='hand2',
+            )
+            github_link.pack(side=tk.LEFT)
 
-        astar_find_label = ttk.Label(
-            astar_find_frame,
-            text=ALGORITHM_INFO["pathfinding"]["astar"]["content"].strip(),
-            font=('Segoe UI', 10),
-            wraplength=500,
-            justify=tk.LEFT
-        )
-        astar_find_label.pack(anchor=tk.W, pady=5)
+            github_urls = {
+                'dfs': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L21-L51',
+                'bfs': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L53-L90',
+                'dijkstra': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L92-L132',
+                'astar': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L135-L180'
+            }
+
+            def make_link_handler(url):
+                return lambda e: webbrowser.open(url)
+
+            github_link.bind('<Button-1>', make_link_handler(github_urls[algo_key]))
 
         # ========== 算法对比表格 ==========
         table_frame = ttk.LabelFrame(content_frame, text=ALGORITHM_INFO["comparison"]["title"], padding=15)
@@ -1222,7 +1248,7 @@ class MazeVisualizer:
             intro_frame, 
             text=ABOUT_INFO["introduction"].strip(),
             font=('Segoe UI', 10),
-            wraplength=420,
+            wraplength=400,
             justify=tk.LEFT
         )
         intro_label.pack(fill=tk.X)
@@ -1312,25 +1338,3 @@ class MazeVisualizer:
             # 如果处于暂停状态，自动恢复
             if self.is_paused:
                 self.toggle_pause()
-
-
-def main():
-    """主函数"""
-    root = tk.Tk()
-    app = MazeVisualizer(root)
-
-    # 设置窗口图标和主题
-    try:
-        root.iconbitmap('maze.ico')
-    except:
-        pass
-
-    # 使用ttk主题
-    style = ttk.Style()
-    style.theme_use('vista')
-
-    # 自定义样式
-    style.configure('.', font=('Segoe UI', 10))
-
-    # 启动主循环
-    root.mainloop()

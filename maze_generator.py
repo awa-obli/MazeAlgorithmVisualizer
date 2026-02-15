@@ -51,7 +51,6 @@ class MazeGenerator:
                     wall_y = (y1 + y2) // 2
                     self.maze[wall_y][wall_x] = 0
 
-                    # 可视化
                     self.update_cell(wall_x, wall_y, 'path')
                     self.update_cell(x2, y2, 'current')
 
