@@ -166,9 +166,12 @@ class MazeVisualizer:
         algo_frame.pack(fill=tk.X, pady=(0, 10))
 
         self.gen_algo_var = tk.StringVar(value="DFS")
-        algorithms = [("深度优先 (DFS)", "DFS"),
-                      ("Prim算法", "Prim"),
-                      ("递归分割", "Recursive")]
+        algorithms = [
+            ("深度优先 (DFS)", "DFS"),
+            ("Prim算法", "Prim"),
+            ("Kruskal算法", "Kruskal"),
+            ("递归分割", "Recursive")
+        ]
 
         for text, value in algorithms:
             ttk.Radiobutton(algo_frame, text=text, variable=self.gen_algo_var, value=value).pack(anchor=tk.W, pady=2)
@@ -529,6 +532,8 @@ class MazeVisualizer:
             generator.generate_dfs()
         elif algo == "Prim":
             generator.generate_prim()
+        elif algo == "Kruskal":
+            generator.generate_kruskal()
         elif algo == "Recursive":
             generator.generate_recursive()
 
@@ -979,6 +984,7 @@ class MazeVisualizer:
         gen_algorithms = [
             "dfs",
             "prim",
+            "kruskal",
             "recursive"
         ]
 
@@ -1017,7 +1023,8 @@ class MazeVisualizer:
             github_urls = {
                 'dfs': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/maze_generator.py#L11-L62',
                 'prim': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/maze_generator.py#L64-L118',
-                'recursive': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/maze_generator.py#L120-L160'
+                'kruskal': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/maze_generator.py#L120-L192',
+                'recursive': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/maze_generator.py#L194-L234'
             }
 
             def make_link_handler(url):

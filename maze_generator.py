@@ -117,6 +117,80 @@ class MazeGenerator:
             else:
                 self.update_cell(x1, y1, 'wall')
 
+    def generate_kruskal(self):
+        """Kruskal算法生成迷宫"""
+        x_size, y_size = self.width, self.height
+
+        # 生成所有墙壁
+        for i in range(2, x_size - 1, 2):
+            for j in range(1, y_size - 1):
+                self.maze[j][i] = 1
+                self.update_cell(i, j, 'wall')
+
+        for i in range(2, y_size - 1, 2):
+            for j in range(1, x_size - 1):
+                self.maze[i][j] = 1
+                self.update_cell(j, i, 'wall')
+
+        # 标记可通行的单元格（所有奇数坐标的点）
+        cells = set()
+        for y in range(1, y_size - 1, 2):
+            for x in range(1, x_size - 1, 2):
+                cells.add((x, y))
+
+        # 初始化并查集
+        parent = {}
+
+        def find(cell):
+            """查找集合根节点（路径压缩）"""
+            if parent[cell] != cell:
+                parent[cell] = find(parent[cell])
+            return parent[cell]
+
+        def union(cell1, cell2):
+            """合并两个集合（按秩合并）"""
+            root1 = find(cell1)
+            root2 = find(cell2)
+            if root1 != root2:
+                parent[root1] = root2
+
+        # 初始化每个单元格的父节点为自己
+        for cell in cells:
+            parent[cell] = cell
+
+        # 收集所有可能的墙壁（相邻单元格之间的墙）
+        walls = []
+
+        for cell in cells:
+            x, y = cell
+            # 检查水平方向的墙
+            nx, ny = x + 2, y  # 右侧2格的单元格
+            if nx < x_size - 1 and (nx, ny) in cells:
+                wall_x, wall_y = x + 1, y  # 中间的墙
+                walls.append(((cell, (nx, ny)), (wall_x, wall_y)))
+
+            # 检查垂直方向的墙
+            nx, ny = x, y + 2  # 下方2格的单元格
+            if ny < y_size - 1 and (nx, ny) in cells:
+                wall_x, wall_y = x, y + 1  # 中间的墙
+                walls.append(((cell, (nx, ny)), (wall_x, wall_y)))
+
+        # 随机打乱墙壁顺序
+        random.shuffle(walls)
+
+        # 遍历所有墙壁，如果两端单元格属于不同集合，则打通
+        for (cell1, cell2), (wall_x, wall_y) in walls:
+            self.update_cell(wall_x, wall_y, 'current')
+            if find(cell1) != find(cell2):
+                # 打通墙壁
+                self.maze[wall_y][wall_x] = 0
+                # 合并两个集合
+                union(cell1, cell2)
+
+                self.update_cell(wall_x, wall_y, 'path')
+            else:
+                self.update_cell(wall_x, wall_y, 'wall')
+
     def generate_recursive(self):
         """递归分割算法生成迷宫"""
 
