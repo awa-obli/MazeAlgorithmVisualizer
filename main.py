@@ -3,7 +3,6 @@ from tkinter import ttk
 from maze_visualizer import MazeVisualizer
 
 
-
 def main():
     """主函数"""
     root = tk.Tk()

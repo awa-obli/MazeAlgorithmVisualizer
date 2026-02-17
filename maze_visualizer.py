@@ -188,7 +188,9 @@ class MazeVisualizer:
             ("深度优先 (DFS)", "DFS"),
             ("广度优先 (BFS)", "BFS"),
             ("Dijkstra算法", "Dijkstra"),
-            ("A*算法", "AStar")
+            ("A*算法", "AStar"),
+            ("双向深度优先 (D-DFS)", "D-DFS"),
+            ("双向广度优先 (D-BFS)", "D-BFS")
         ]
 
         for text, value in find_algorithms:
@@ -584,6 +586,10 @@ class MazeVisualizer:
             path = finder.find_path_dijkstra()
         elif algo == "AStar":
             path = finder.find_path_astar()
+        elif algo == "D-DFS":
+            path = finder.find_path_bidirectional_dfs()
+        elif algo == "D-BFS":
+            path = finder.find_path_bidirectional_bfs()
 
         elapsed = time.time() - start_time
 
@@ -1041,7 +1047,9 @@ class MazeVisualizer:
             "dfs",
             "bfs",
             "dijkstra",
-            "astar"
+            "astar",
+            "d-dfs",
+            "d-bfs"
         ]
 
         for algo_key in find_algorithms:
@@ -1079,7 +1087,9 @@ class MazeVisualizer:
                 'dfs': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L21-L51',
                 'bfs': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L53-L90',
                 'dijkstra': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L92-L132',
-                'astar': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L135-L180'
+                'astar': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L135-L180',
+                'd-dfs': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L182-L263',
+                'd-bfs': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L265-L343'
             }
 
             def make_link_handler(url):
