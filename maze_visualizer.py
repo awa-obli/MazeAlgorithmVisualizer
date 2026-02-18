@@ -39,6 +39,7 @@ class MazeVisualizer:
         self.is_generating = False
         self.is_finding = False
         self.is_paused = False
+        self.is_step_mode = False
         self.pause_event = threading.Event()
         self.pause_event.set()  # 初始为非暂停状态
         self.animation_speed = 100  # ms
@@ -207,18 +208,31 @@ class MazeVisualizer:
         ttk.Scale(speed_frame, from_=0, to=200, variable=self.speed_var, orient=tk.HORIZONTAL,
                   command=self.update_speed).pack(fill=tk.X)
 
+        # 执行控制按钮
+        button_frame1 = ttk.Frame(control_frame)
+        button_frame1.pack(fill=tk.X, pady=(0, 5))
+
         # 暂停/继续按钮
-        self.pause_btn = ttk.Button(control_frame, text="⏸️ 暂停", command=self.toggle_pause)
-        self.pause_btn.pack(fill=tk.X, pady=(0, 10))
+        self.pause_btn = ttk.Button(button_frame1, text="⏸️ 暂停", command=self.toggle_pause)
+        self.pause_btn.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
         self.pause_btn.state(['disabled'])  # 初始禁用
 
-        # 操作按钮
-        button_frame = ttk.Frame(control_frame)
-        button_frame.pack(fill=tk.X, pady=(0, 10))
+        # 单步执行按钮
+        step_frame = ttk.Frame(button_frame1, width=30, height=30)
+        step_frame.pack_propagate(False)  # 禁止子控件撑开 frame
+        step_frame.pack(side=tk.LEFT, padx=(5, 0))
 
-        ttk.Button(button_frame, text="清空路径", command=self.clear_path).pack(
+        self.step_btn = ttk.Button(step_frame, text="⏯️", command=self.step_execute)
+        self.step_btn.pack(fill=tk.BOTH, expand=True)
+        self.step_btn.state(['disabled'])  # 初始禁用
+
+        # 操作按钮
+        button_frame2 = ttk.Frame(control_frame)
+        button_frame2.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Button(button_frame2, text="清空路径", command=self.clear_path).pack(
             side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
-        ttk.Button(button_frame, text="重置迷宫", command=self.reset_maze).pack(
+        ttk.Button(button_frame2, text="重置迷宫", command=self.reset_maze).pack(
             side=tk.LEFT, fill=tk.X, expand=True)
 
         # 状态信息
@@ -469,13 +483,17 @@ class MazeVisualizer:
     def update_cell(self, x, y, cell_type):
         """更新单元格显示"""
         if threading.current_thread() is threading.main_thread():
-            # 主线程（手动编辑）：直接更新，不阻塞
+            # 主线程（手动编辑）：直接更新
             self._do_update_cell(x, y, cell_type)
         else:
-            # 子线程（算法动画）：调度到主线程（确保线程安全），然后等待
+            # 子线程（算法动画）：调度到主线程更新（确保线程安全），并延迟一段时间
             self.root.after_idle(self._do_update_cell, x, y, cell_type)
             self.check_pause()
-            time.sleep(self.animation_speed / 1000)
+            if self.is_step_mode:  # 单步模式下每步结束后重新暂停，不设置延迟
+                self.is_step_mode = False
+                self.pause_event.clear()
+            else:
+                time.sleep(self.animation_speed / 1000)
 
     def _do_update_cell(self, x, y, cell_type):
         """执行GUI更新"""
@@ -712,12 +730,8 @@ class MazeVisualizer:
         if self.maze:
             self.draw_maze()
 
-    def on_canvas_click(self, event):
-        """画布点击事件"""
-        if not self.maze or self.is_generating or self.is_finding:
-            return
-
-        # 获取画布坐标
+    def _get_cell_at(self, event):
+        """根据鼠标事件返回单元格坐标，越界返回 None"""
         x = self.canvas.canvasx(event.x)
         y = self.canvas.canvasy(event.y)
 
@@ -725,89 +739,57 @@ class MazeVisualizer:
         height = len(self.maze)
         cell_size = int(self.base_cell_size * self.zoom_level)
 
-        # 计算居中偏移
         canvas_width = self.canvas.winfo_width()
         canvas_height = self.canvas.winfo_height()
         total_width = width * cell_size
         total_height = height * cell_size
 
-        if total_width < canvas_width:
-            offset_x = (canvas_width - total_width) // 2
-        else:
-            offset_x = 0
+        offset_x = (canvas_width - total_width) // 2 if total_width < canvas_width else 0
+        offset_y = (canvas_height - total_height) // 2 if total_height < canvas_height else 0
 
-        if total_height < canvas_height:
-            offset_y = (canvas_height - total_height) // 2
-        else:
-            offset_y = 0
-
-        # 计算单元格坐标
         cell_x = int((x - offset_x) // cell_size)
         cell_y = int((y - offset_y) // cell_size)
 
         if 0 <= cell_x < width and 0 <= cell_y < height:
-            if (cell_x, cell_y) != self.start and (cell_x, cell_y) != self.end:
-                # 切换墙壁/路径
-                if self.maze[cell_y][cell_x] == 0:
-                    self.maze[cell_y][cell_x] = 1
-                    self.update_cell(cell_x, cell_y, 'wall')
-                else:
-                    self.maze[cell_y][cell_x] = 0
-                    self.update_cell(cell_x, cell_y, 'path')
+            return cell_x, cell_y
+        return None
 
-    def on_canvas_drag(self, event):
-        """画布拖拽事件"""
-        self.on_canvas_click(event)
+    def on_canvas_click(self, event):
+        """画布点击事件"""
+        if not self.maze or self.is_generating or self.is_finding:
+            return
+        cell = self._get_cell_at(event)
+        if cell and cell != self.start and cell != self.end:
+            cell_x, cell_y = cell
+            if self.maze[cell_y][cell_x] == 0:
+                self.maze[cell_y][cell_x] = 1
+                self.update_cell(cell_x, cell_y, 'wall')
+            else:
+                self.maze[cell_y][cell_x] = 0
+                self.update_cell(cell_x, cell_y, 'path')
 
     def on_canvas_right_click(self, event):
         """画布右键点击事件"""
         if not self.maze or self.is_generating or self.is_finding:
             return
+        cell = self._get_cell_at(event)
+        if cell is None:
+            return
+        cell_x, cell_y = cell
+        if self.maze[cell_y][cell_x] == 0 and cell != self.start and cell != self.end:
+            choice = simpledialog.askstring("设置点", f"在({cell_x}, {cell_y})设置:\n1. 起点\n2. 终点", parent=self.root)
+            if choice == '1':
+                self.update_cell(*self.start, 'path')
+                self.start = (cell_x, cell_y)
+                self.update_cell(cell_x, cell_y, 'start')
+            elif choice == '2':
+                self.update_cell(*self.end, 'path')
+                self.end = (cell_x, cell_y)
+                self.update_cell(cell_x, cell_y, 'end')
 
-        # 获取画布坐标
-        x = self.canvas.canvasx(event.x)
-        y = self.canvas.canvasy(event.y)
-
-        width = len(self.maze[0])
-        height = len(self.maze)
-        cell_size = int(self.base_cell_size * self.zoom_level)
-
-        # 计算居中偏移
-        canvas_width = self.canvas.winfo_width()
-        canvas_height = self.canvas.winfo_height()
-        total_width = width * cell_size
-        total_height = height * cell_size
-
-        if total_width < canvas_width:
-            offset_x = (canvas_width - total_width) // 2
-        else:
-            offset_x = 0
-
-        if total_height < canvas_height:
-            offset_y = (canvas_height - total_height) // 2
-        else:
-            offset_y = 0
-
-        # 计算单元格坐标
-        cell_x = int((x - offset_x) // cell_size)
-        cell_y = int((y - offset_y) // cell_size)
-
-        if 0 <= cell_x < width and 0 <= cell_y < height:
-            if self.maze[cell_y][cell_x] == 0 and (cell_x, cell_y) != self.start and (cell_x, cell_y) != self.end:
-                # 弹窗选择设置起点还是终点
-                choice = simpledialog.askstring("设置点", f"在({cell_x}, {cell_y})设置:\n1. 起点\n2. 终点", parent=self.root)
-
-                if choice == '1':
-                    # 更新原起点为路径
-                    self.update_cell(*self.start, 'path')
-                    self.start = (cell_x, cell_y)
-                    self.update_cell(cell_x, cell_y, 'start')
-
-                elif choice == '2':
-                    # 更新原终点为路径
-                    self.update_cell(*self.end, 'path')
-                    self.end = (cell_x, cell_y)
-                    self.update_cell(cell_x, cell_y, 'end')
+    def on_canvas_drag(self, event):
+        """画布拖拽事件"""
+        self.on_canvas_click(event)
 
     def on_mousewheel(self, event):
         """鼠标滚轮事件 - 滚动画布"""
@@ -1331,6 +1313,7 @@ class MazeVisualizer:
         if self.is_paused:
             self.is_paused = False
             self.pause_event.set()
+            self.step_btn.state(['disabled'])
             self.pause_btn.config(text="⏸️ 暂停")
             # 恢复原来的状态文本
             if self.is_generating:
@@ -1340,6 +1323,7 @@ class MazeVisualizer:
         else:
             self.is_paused = True
             self.pause_event.clear()
+            self.step_btn.state(['!disabled'])
             self.pause_btn.config(text="▶️ 继续")
             self.status_label.config(text="已暂停", foreground="orange")
 
@@ -1353,6 +1337,13 @@ class MazeVisualizer:
             self.pause_btn.state(['!disabled'])
         else:
             self.pause_btn.state(['disabled'])
+            self.step_btn.state(['disabled'])
             # 如果处于暂停状态，自动恢复
             if self.is_paused:
                 self.toggle_pause()
+
+    def step_execute(self):
+        """单步执行"""
+        # 临时恢复执行，一步结束后会在update_cell中重新暂停
+        self.is_step_mode = True
+        self.pause_event.set()
