@@ -246,14 +246,14 @@ ALGORITHM_INFO = {
 ABOUT_INFO = {
     "title": "🧩 迷宫算法可视化工具",
     "subtitle": "by awa",
-    "version": "1.5.5",
+    "version": "1.5.6",
     "introduction": """
 本项目是一个用于学习和演示迷宫生成算法与寻路算法的交互式工具，使用tkinter编写。
 将算法以可视化的方式逐步执行，帮助学习者理解算法思想。
     """,
     "features": [
         "• 多种迷宫生成算法：DFS、Prim、Kruskal、递归分割",
-        "• 多种寻路算法：DFS、BFS、Dijkstra、A*",
+        "• 多种寻路算法：DFS、BFS、Dijkstra、A*、D-DFS、D-BFS",
         "• 实时可视化算法执行过程",
         "• 自定义迷宫大小（最大101×101）",
         "• 可编辑迷宫（左键切换墙壁/路径）",

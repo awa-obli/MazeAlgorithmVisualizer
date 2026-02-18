@@ -468,11 +468,14 @@ class MazeVisualizer:
 
     def update_cell(self, x, y, cell_type):
         """更新单元格显示"""
-        # 让主线程在空闲时执行GUI更新，保证线程安全
-        self.root.after_idle(self._do_update_cell, x, y, cell_type)
-
-        self.check_pause()
-        time.sleep(self.animation_speed / 1000)
+        if threading.current_thread() is threading.main_thread():
+            # 主线程（手动编辑）：直接更新，不阻塞
+            self._do_update_cell(x, y, cell_type)
+        else:
+            # 子线程（算法动画）：调度到主线程（确保线程安全），然后等待
+            self.root.after_idle(self._do_update_cell, x, y, cell_type)
+            self.check_pause()
+            time.sleep(self.animation_speed / 1000)
 
     def _do_update_cell(self, x, y, cell_type):
         """执行GUI更新"""
@@ -512,21 +515,21 @@ class MazeVisualizer:
             self.reset_maze()
 
             # 在新线程中生成迷宫
-            thread = threading.Thread(target=self._generate_maze_thread)
+            algo = self.gen_algo_var.get()
+            thread = threading.Thread(target=self._generate_maze_thread, args=(algo,))
             thread.daemon = True
             thread.start()
         except ValueError:
             messagebox.showerror("错误", "请输入有效的数字")
 
-    def _generate_maze_thread(self):
+    def _generate_maze_thread(self, algo):
         """生成迷宫的线程函数"""
         self.is_generating = True
         self.is_paused = False
         self.pause_event.set()
-        self.enable_pause_button(True)
-        self.status_label.config(text="正在生成迷宫...", foreground="orange")
+        self.root.after(0, lambda: self.enable_pause_button(True))
+        self.root.after(0, lambda: self.status_label.config(text="正在生成迷宫...", foreground="orange"))
 
-        algo = self.gen_algo_var.get()
         start_time = time.time()
 
         generator = MazeGenerator(self.maze, self.width, self.height, self.update_cell)
@@ -544,10 +547,10 @@ class MazeVisualizer:
         self.update_cell(*self.end, 'end')
 
         elapsed = time.time() - start_time
-        self.status_label.config(text="迷宫生成完成", foreground="green")
-        self.time_label.config(text=f"耗时: {elapsed:.2f}s")
         self.is_generating = False
-        self.enable_pause_button(False)
+        self.root.after(0, lambda: self.status_label.config(text="迷宫生成完成", foreground="green"))
+        self.root.after(0, lambda: self.time_label.config(text=f"耗时: {elapsed:.2f}s"))
+        self.root.after(0, lambda: self.enable_pause_button(False))
 
     def find_path(self):
         """寻路"""
@@ -561,19 +564,19 @@ class MazeVisualizer:
         self.clear_path()
 
         # 在新线程中寻路
-        thread = threading.Thread(target=self._find_path_thread)
+        algo = self.find_algo_var.get()
+        thread = threading.Thread(target=self._find_path_thread, args=(algo,))
         thread.daemon = True
         thread.start()
 
-    def _find_path_thread(self):
+    def _find_path_thread(self, algo):
         """寻路的线程函数"""
         self.is_finding = True
         self.is_paused = False
         self.pause_event.set()
-        self.enable_pause_button(True)
-        self.status_label.config(text="正在寻路...", foreground="orange")
+        self.root.after(0, lambda: self.enable_pause_button(True))
+        self.root.after(0, lambda: self.status_label.config(text="正在寻路...", foreground="orange"))
 
-        algo = self.find_algo_var.get()
         start_time = time.time()
 
         finder = PathFinder(self.maze, self.width, self.height, self.start, self.end, self.update_cell)
@@ -599,14 +602,14 @@ class MazeVisualizer:
                 if (x, y) != self.start and (x, y) != self.end:
                     self.update_cell(x, y, 'solution')
 
-            self.status_label.config(text=f"寻路成功 ({len(path)}步)", foreground="green")
-            self.steps_label.config(text=f"步数: {len(path)}")
+            self.root.after(0, lambda: self.status_label.config(text=f"寻路成功 ({len(path)}步)", foreground="green"))
+            self.root.after(0, lambda: self.steps_label.config(text=f"步数: {len(path)}"))
         else:
-            self.status_label.config(text="寻路失败", foreground="red")
+            self.root.after(0, lambda: self.status_label.config(text="寻路失败", foreground="red"))
 
-        self.time_label.config(text=f"耗时: {elapsed:.2f}s")
         self.is_finding = False
-        self.enable_pause_button(False)
+        self.root.after(0, lambda: self.time_label.config(text=f"耗时: {elapsed:.2f}s"))
+        self.root.after(0, lambda: self.enable_pause_button(False))
 
     def clear_path(self):
         """清除路径标记"""
