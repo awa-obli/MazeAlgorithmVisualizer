@@ -266,7 +266,7 @@ ALGORITHM_INFO = {
 ABOUT_INFO = {
     "title": "🧩 迷宫算法可视化工具",
     "subtitle": "by awa",
-    "version": "1.6.1",
+    "version": "1.6.2",
     "introduction": """
 本项目是一个用于学习和演示迷宫生成算法与寻路算法的交互式工具，使用tkinter编写。
 将算法以可视化的方式逐步执行，帮助学习者理解算法思想。

@@ -305,85 +305,76 @@ class MazeVisualizer:
         about_label.bind('<Button-1>', self.show_about)
 
         # 缩放控制
-        zoom_frame = tk.Frame(self.canvas, bg='white', bd=0)
+        zoom_frame = ttk.Frame(self.canvas)
         zoom_frame.place(relx=1.0, rely=0.0, anchor=tk.NE, x=-10, y=10)
 
         # 添加缩放比例标签
-        self.zoom_label = tk.Label(
+        self.zoom_label = ttk.Label(
             zoom_frame,
             text="100%",
-            font=('Arial', 10),
-            bg='white'
+            font=('Segoe UI', 10),
         )
         self.zoom_label.pack(side=tk.TOP, pady=(0, 5))
 
         # 创建按钮容器
-        zoom_btn_container = tk.Frame(zoom_frame, bg='white')
+        zoom_btn_container = ttk.Frame(zoom_frame)
         zoom_btn_container.pack(side=tk.TOP, pady=(0, 2))
 
         # +号放大按钮
-        self.zoom_in_btn = tk.Button(
-            zoom_btn_container,
+        zoom_in_frame = ttk.Frame(zoom_btn_container, width=30, height=30)
+        zoom_in_frame.pack_propagate(False)
+        zoom_in_frame.pack(side=tk.LEFT, padx=(0, 2))
+
+        self.zoom_in_btn = ttk.Button(
+            zoom_in_frame,
             text="+",
-            font=('Arial', 14, 'bold'),
-            width=2,
-            height=1,
             command=self.zoom_in,
-            bg='#f0f0f0',
-            relief='flat',
-            bd=2,
-            padx=0,
-            pady=0,
             cursor='hand2'
         )
-        self.zoom_in_btn.pack(side=tk.LEFT, padx=(0, 2))
+        self.zoom_in_btn.pack(fill=tk.BOTH, expand=True)
 
         # -号缩小按钮
-        self.zoom_out_btn = tk.Button(
-            zoom_btn_container,
+        zoom_out_frame = ttk.Frame(zoom_btn_container, width=30, height=30)
+        zoom_out_frame.pack_propagate(False)
+        zoom_out_frame.pack(side=tk.LEFT)
+
+        self.zoom_out_btn = ttk.Button(
+            zoom_out_frame,
             text="-",
-            font=('Arial', 14, 'bold'),
-            width=2,
-            height=1,
             command=self.zoom_out,
-            bg='#f0f0f0',
-            relief='flat',
-            bd=2,
-            padx=0,
-            pady=0,
             cursor='hand2'
         )
-        self.zoom_out_btn.pack(side=tk.LEFT)
+        self.zoom_out_btn.pack(fill=tk.BOTH, expand=True)
 
         # 重置按钮
-        self.zoom_reset_btn = tk.Button(
-            zoom_frame,
-            text="↺",
-            font=('Arial', 12, 'bold'),
-            width=5,
-            height=1,
-            command=self.reset_zoom,
-            bg='#f0f0f0',
-            relief='flat',
-            bd=2,
-            cursor='hand2'
-        )
-        self.zoom_reset_btn.pack(side=tk.TOP)
+        zoom_reset_frame = ttk.Frame(zoom_frame, width=62, height=30)
+        zoom_reset_frame.pack_propagate(False)
+        zoom_reset_frame.pack(side=tk.TOP)
 
-        # 添加问号按钮
-        help_btn = tk.Button(
-            canvas_frame,
-            text="?",
-            font=("Arial", 12, "bold"),
-            width=2,
-            height=1,
-            command=self.show_algorithm_info,
-            bg="#f0f0f0",
-            relief='flat',
-            bd=2,
+        self.zoom_reset_btn = ttk.Button(
+            zoom_reset_frame,
+            text="↺",
+            command=self.reset_zoom,
             cursor='hand2'
         )
-        help_btn.place(x=10, y=10)
+        self.zoom_reset_btn.pack(fill=tk.BOTH, expand=True)
+
+        # 添加算法说明按钮
+        help_frame = ttk.Frame(canvas_frame, width=30, height=30)
+        help_frame.pack_propagate(False)
+        help_frame.place(x=10, y=10)
+
+        self.help_btn = ttk.Button(
+            help_frame,
+            text="?",
+            command=self.show_algorithm_info,
+            cursor='hand2'
+        )
+        self.help_btn.pack(fill=tk.BOTH, expand=True)
+
+        # 右下角坐标显示
+        self.coord_label = tk.Label(self.canvas, text="", font=('Segoe UI', 9), bg='white')
+        self.coord_label.place(relx=1.0, rely=1.0, anchor=tk.SE, x=-5, y=-5)
 
     def setup_bindings(self):
         """设置事件绑定"""
@@ -402,6 +393,10 @@ class MazeVisualizer:
         self.canvas.bind("<Button-2>", self.start_pan)  # 中键按下
         self.canvas.bind("<B2-Motion>", self.pan)  # 中键拖拽
         self.canvas.bind("<ButtonRelease-2>", self.stop_pan)  # 中键释放
+
+        # 鼠标移动
+        self.canvas.bind("<Motion>", self.on_canvas_motion)
+        self.canvas.bind("<Leave>", self.on_canvas_leave)
 
     def init_maze(self, width, height):
         """初始化迷宫"""
@@ -817,6 +812,20 @@ class MazeVisualizer:
     def stop_pan(self, event):
         """停止拖动画布 - 恢复鼠标样式"""
         self.canvas.config(cursor="")
+
+    def on_canvas_motion(self, event):
+        """鼠标移动时更新坐标显示"""
+        if not self.maze:
+            return
+        cell = self._get_cell_at(event)
+        if cell:
+            self.coord_label.config(text=f"{cell[0]}, {cell[1]}")
+        else:
+            self.coord_label.config(text="")
+
+    def on_canvas_leave(self, event):
+        """鼠标离开画布时清空坐标"""
+        self.coord_label.config(text="")
 
     def zoom_in(self, event=None):
         """放大"""
