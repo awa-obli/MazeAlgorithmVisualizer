@@ -7,7 +7,7 @@
 ## ✨ Features
 
 - 多种迷宫生成算法：DFS、Prim、Kruskal、递归分割
-- 多种寻路算法：DFS、BFS、Dijkstra、A*、D-DFS、D-BFS
+- 多种寻路算法：DFS、BFS、Dijkstra、GBFS、A*、D-DFS、D-BFS
 - 实时可视化算法执行过程
 - 自定义迷宫大小（最大101×101）
 - 可编辑迷宫（左键切换墙壁/路径）
@@ -25,6 +25,11 @@
 - **鼠标中键拖拽**：平移画布
 - **左键点击/拖拽**：编辑墙壁
 - **右键点击路径**：设置起点/终点
+
+## 🔧 Requirements
+
+- **Python 3.6+**
+- 不依赖任何第三方库
 
 ## 🚀 Quick Start
 

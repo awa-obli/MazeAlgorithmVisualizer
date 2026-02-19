@@ -131,6 +131,51 @@ class PathFinder:
 
         return None
 
+    def find_path_gbfs(self):
+        """GBFS算法寻路"""
+        def heuristic(a, b):
+            """曼哈顿距离"""
+            return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+        open_set = []
+        heapq.heappush(open_set, (heuristic(self.start, self.end), self.start))
+
+        came_from = {self.start: None}
+        visited = {self.start}
+
+        while open_set:
+            current_f, current = heapq.heappop(open_set)
+
+            if current == self.end:
+                # 回溯路径
+                path = []
+                cur = self.end
+                while cur is not None:
+                    path.append(cur)
+                    cur = came_from[cur]
+                path.reverse()
+                return path
+
+            if current != self.start and current != self.end:
+                self.update_cell(*current, 'current')
+
+            for dir_ in self.DIRECTIONS:
+                neighbor = dir_(*current)
+                x, y = neighbor
+
+                if 0 <= x < self.width and 0 <= y < self.height and self.maze[y][x] == 0:
+                    if neighbor not in visited:
+                        came_from[neighbor] = current
+                        visited.add(neighbor)
+                        priority = heuristic(neighbor, self.end)
+                        heapq.heappush(open_set, (priority, neighbor))
+
+                        if neighbor != self.start and neighbor != self.end:
+                            self.update_cell(x, y, 'frontier')
+            if current != self.start and current != self.end:
+                self.update_cell(*current, 'visited')
+
+        return None
 
     def find_path_astar(self):
         """A*算法寻路"""
@@ -294,7 +339,6 @@ class PathFinder:
 
         return None
 
-
     def _bfs_layer(self, queue, visited_self, visited_other, parent, directions, is_forward):
         """
         扩展一层BFS
@@ -341,7 +385,6 @@ class PathFinder:
                 self.update_cell(*current, 'visited')
 
         return None
-
 
     def _construct_bidirectional_path(self, meeting_point, parent_forward, parent_backward):
         """

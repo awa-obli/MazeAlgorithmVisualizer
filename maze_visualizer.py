@@ -14,7 +14,6 @@ from texts import ALGORITHM_INFO, ABOUT_INFO
 
 class MazeVisualizer:
     "迷宫算法可视化"
-
     def __init__(self, root):
         self.root = root
         self.root.title("迷宫算法可视化工具")
@@ -189,6 +188,7 @@ class MazeVisualizer:
             ("深度优先 (DFS)", "DFS"),
             ("广度优先 (BFS)", "BFS"),
             ("Dijkstra算法", "Dijkstra"),
+            ("贪心最佳优先 (GBFS)", "GBFS"),
             ("A*算法", "AStar"),
             ("双向深度优先 (D-DFS)", "D-DFS"),
             ("双向广度优先 (D-BFS)", "D-BFS")
@@ -605,6 +605,8 @@ class MazeVisualizer:
             path = finder.find_path_bfs()
         elif algo == "Dijkstra":
             path = finder.find_path_dijkstra()
+        elif algo == "GBFS":
+            path = finder.find_path_gbfs()
         elif algo == "AStar":
             path = finder.find_path_astar()
         elif algo == "D-DFS":
@@ -1032,6 +1034,7 @@ class MazeVisualizer:
             "dfs",
             "bfs",
             "dijkstra",
+            "gbfs",
             "astar",
             "d-dfs",
             "d-bfs"
@@ -1072,9 +1075,10 @@ class MazeVisualizer:
                 'dfs': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L21-L51',
                 'bfs': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L53-L90',
                 'dijkstra': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L92-L132',
-                'astar': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L135-L180',
-                'd-dfs': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L182-L263',
-                'd-bfs': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L265-L343'
+                'gbfs': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L134-L178',
+                'astar': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L180-L225',
+                'd-dfs': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L227-L308',
+                'd-bfs': 'https://github.com/awa-obli/MazeAlgorithmVisualizer/blob/main/path_finder.py#L310-L387'
             }
 
             def make_link_handler(url):
