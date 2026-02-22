@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from maze_visualizer import MazeVisualizer
+from maze_visualizer import MazeVisualizer, resource_path
 
 
 def main():
@@ -10,7 +10,7 @@ def main():
 
     # 设置窗口图标和主题
     try:
-        root.iconbitmap('maze.ico')
+        root.iconbitmap(resource_path('maze.ico'))
     except:
         pass
 

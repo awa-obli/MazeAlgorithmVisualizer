@@ -6,10 +6,18 @@ from tkinter import ttk, messagebox, simpledialog
 import threading
 import time
 import webbrowser
+import sys
+import os
 from maze_generator import MazeGenerator
 from path_finder import PathFinder
 from maze_codec import encode_maze_to_base64, decode_base64_to_maze
 from texts import ALGORITHM_INFO, ABOUT_INFO
+
+
+def resource_path(relative_path):
+    """获取资源文件的绝对路径（兼容PyInstaller）"""
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(__file__))
+    return os.path.join(base_path, relative_path)
 
 
 class MazeVisualizer:
@@ -918,7 +926,7 @@ class MazeVisualizer:
 
         # 设置窗口图标
         try:
-            info_window.iconbitmap('maze.ico')
+            info_window.iconbitmap(resource_path('maze.ico'))
         except:
             pass
 
@@ -1188,7 +1196,7 @@ class MazeVisualizer:
 
         # 设置窗口图标
         try:
-            about_window.iconbitmap('maze.ico')
+            about_window.iconbitmap(resource_path('maze.ico'))
         except:
             pass
 
