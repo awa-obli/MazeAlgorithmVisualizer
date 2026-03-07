@@ -21,7 +21,8 @@ def resource_path(relative_path):
 
 
 class MazeVisualizer:
-    "迷宫算法可视化"
+    """迷宫算法可视化"""
+
     def __init__(self, root):
         self.root = root
         self.root.title("迷宫算法可视化工具")
@@ -715,11 +716,11 @@ class MazeVisualizer:
         try:
             self.reset_maze()
             self.maze, (self.width, self.height) = decode_base64_to_maze(encoded)
-            
+
             # 设置起点和终点
             self.start = (1, 1)
             self.end = (self.width - 2, self.height - 2)
-            
+
             self.cell_states.clear()
             self.draw_maze()
             self.status_label.config(text="迷宫解码成功", foreground="green")
@@ -782,7 +783,11 @@ class MazeVisualizer:
             return
         cell_x, cell_y = cell
         if self.maze[cell_y][cell_x] == 0 and cell != self.start and cell != self.end:
-            choice = simpledialog.askstring("设置点", f"在({cell_x}, {cell_y})设置:\n1. 起点\n2. 终点", parent=self.root)
+            choice = simpledialog.askstring(
+                "设置点",
+                f"在({cell_x}, {cell_y})设置:\n1. 起点\n2. 终点",
+                parent=self.root
+            )
             if choice == '1':
                 self.update_cell(*self.start, 'path')
                 self.start = (cell_x, cell_y)
@@ -970,7 +975,7 @@ class MazeVisualizer:
         canvas.bind("<Leave>", lambda e: canvas.unbind_all("<MouseWheel>"))
 
         # === 填充内容 ===
-        
+
         # 标题
         ttk.Label(
             content_frame,
@@ -1001,8 +1006,8 @@ class MazeVisualizer:
         for algo_key in gen_algorithms:
             # 创建算法框架
             algo_frame = ttk.LabelFrame(
-                gen_frame, 
-                text=ALGORITHM_INFO["generation"][algo_key]["title"], 
+                gen_frame,
+                text=ALGORITHM_INFO["generation"][algo_key]["title"],
                 padding=12
             )
             algo_frame.pack(fill=tk.X, pady=5)
@@ -1060,8 +1065,8 @@ class MazeVisualizer:
         for algo_key in find_algorithms:
             # 创建算法框架
             algo_frame = ttk.LabelFrame(
-                find_frame, 
-                text=ALGORITHM_INFO["pathfinding"][algo_key]["title"], 
+                find_frame,
+                text=ALGORITHM_INFO["pathfinding"][algo_key]["title"],
                 padding=12
             )
             algo_frame.pack(fill=tk.X, pady=5)
@@ -1112,8 +1117,11 @@ class MazeVisualizer:
         main_table_frame.pack(fill=tk.X, pady=5)
 
         # ===== 迷宫生成算法对比 =====
-        gen_table_title = ttk.Label(main_table_frame, text=ALGORITHM_INFO["comparison"]["generation"]["title"], 
-                                    font=('Segoe UI', 11, 'bold'))
+        gen_table_title = ttk.Label(
+            main_table_frame,
+            text=ALGORITHM_INFO["comparison"]["generation"]["title"],
+            font=('Segoe UI', 11, 'bold')
+        )
         gen_table_title.pack(anchor=tk.W, pady=(0, 5))
 
         # 生成算法表格框架
@@ -1121,13 +1129,22 @@ class MazeVisualizer:
         gen_table.pack(fill=tk.X, pady=(0, 10))
 
         # 表头
-        headers = ALGORITHM_INFO["comparison"]["generation"]["headers"]
-        col_widths = [80, 120, 200, 120]  # 列宽保持不变
+        gen_headers = ALGORITHM_INFO["comparison"]["generation"]["headers"]
+        gen_col_widths = [80, 120, 200, 120]
 
-        for i, header in enumerate(headers):
-            label = tk.Label(gen_table, text=header, font=('Segoe UI', 10, 'bold'),
-                            bg='#2c3e50', fg='white', padx=8, pady=6, 
-                            width=col_widths[i]//6, anchor=tk.W, relief='flat')
+        for i, header in enumerate(gen_headers):
+            label = tk.Label(
+                gen_table,
+                text=header,
+                font=('Segoe UI', 10, 'bold'),
+                bg='#2c3e50',
+                fg='white',
+                padx=8,
+                pady=6,
+                width=gen_col_widths[i] // 6,
+                anchor=tk.W,
+                relief='flat'
+            )
             label.grid(row=0, column=i, sticky='ew', padx=1, pady=1)
 
         # 生成算法数据行
@@ -1135,20 +1152,32 @@ class MazeVisualizer:
         for row_idx, algo_data in enumerate(gen_data, 1):
             # 交替背景色
             bg_color = '#ecf0f1' if row_idx % 2 == 1 else '#f8f9f9'
-            
+
             row_data = [algo_data["algorithm"], algo_data["idea"], algo_data["features"]]
             for col_idx, data in enumerate(row_data):
-                label = tk.Label(gen_table, text=data, font=('Segoe UI', 9),
-                                bg=bg_color, padx=8, pady=6, width=col_widths[col_idx]//6,
-                                anchor=tk.W, relief='flat', justify=tk.LEFT)
+                label = tk.Label(
+                    gen_table,
+                    text=data,
+                    font=('Segoe UI', 9),
+                    bg=bg_color,
+                    padx=8,
+                    pady=6,
+                    width=gen_col_widths[col_idx] // 6,
+                    anchor=tk.W,
+                    relief='flat',
+                    justify=tk.LEFT
+                )
                 label.grid(row=row_idx, column=col_idx, sticky='ew', padx=1, pady=1)
 
         # 添加分隔线
         ttk.Separator(main_table_frame, orient='horizontal').pack(fill=tk.X, pady=15)
 
         # ===== 迷宫寻路算法对比 =====
-        find_table_title = ttk.Label(main_table_frame, text=ALGORITHM_INFO["comparison"]["pathfinding"]["title"], 
-                                    font=('Segoe UI', 11, 'bold'))
+        find_table_title = ttk.Label(
+            main_table_frame,
+            text=ALGORITHM_INFO["comparison"]["pathfinding"]["title"],
+            font=('Segoe UI', 11, 'bold')
+        )
         find_table_title.pack(anchor=tk.W, pady=(0, 5))
 
         # 寻路算法表格框架
@@ -1157,12 +1186,21 @@ class MazeVisualizer:
 
         # 表头
         find_headers = ALGORITHM_INFO["comparison"]["pathfinding"]["headers"]
-        find_col_widths = [80, 120, 200, 100]  # 列宽保持不变
+        find_col_widths = [80, 120, 200, 100]
 
         for i, header in enumerate(find_headers):
-            label = tk.Label(find_table, text=header, font=('Segoe UI', 10, 'bold'),
-                            bg='#2c3e50', fg='white', padx=8, pady=6,
-                            width=find_col_widths[i]//6, anchor=tk.W, relief='flat')
+            label = tk.Label(
+                find_table,
+                text=header,
+                font=('Segoe UI', 10, 'bold'),
+                bg='#2c3e50',
+                fg='white',
+                padx=8,
+                pady=6,
+                width=find_col_widths[i] // 6,
+                anchor=tk.W,
+                relief='flat'
+            )
             label.grid(row=0, column=i, sticky='ew', padx=1, pady=1)
 
         # 寻路算法数据行
@@ -1173,9 +1211,18 @@ class MazeVisualizer:
 
             row_data = [algo_data["algorithm"], algo_data["idea"], algo_data["features"]]
             for col_idx, data in enumerate(row_data):
-                label = tk.Label(find_table, text=data, font=('Segoe UI', 9),
-                                bg=bg_color, padx=8, pady=6, width=find_col_widths[col_idx]//6,
-                                anchor=tk.W, relief='flat', justify=tk.LEFT)
+                label = tk.Label(
+                    find_table,
+                    text=data,
+                    font=('Segoe UI', 9),
+                    bg=bg_color,
+                    padx=8,
+                    pady=6,
+                    width=find_col_widths[col_idx] // 6,
+                    anchor=tk.W,
+                    relief='flat',
+                    justify=tk.LEFT
+                )
                 label.grid(row=row_idx, column=col_idx, sticky='ew', padx=1, pady=1)
 
         # ========== 关闭按钮 ==========
@@ -1266,7 +1313,7 @@ class MazeVisualizer:
         intro_frame = ttk.LabelFrame(content_frame, text="📋 项目介绍", padding=15)
         intro_frame.pack(fill=tk.X, pady=10)
         intro_label = ttk.Label(
-            intro_frame, 
+            intro_frame,
             text=ABOUT_INFO["introduction"].strip(),
             font=('Segoe UI', 10),
             wraplength=400,
@@ -1309,11 +1356,12 @@ class MazeVisualizer:
             cursor='hand2',
         )
         link_label.pack(side=tk.LEFT)
-        
+
         def open_link(event):
             webbrowser.open(ABOUT_INFO["github_url"])
+
         link_label.bind('<Button-1>', open_link)
-        
+
         ttk.Label(
             link_frame,
             text="，遵循 MIT 许可证",
