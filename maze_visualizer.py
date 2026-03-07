@@ -65,6 +65,9 @@ class MazeVisualizer:
             'frontier': '#e67e22'
         }
 
+        # 颜色图例色块引用（用于自定义颜色后刷新图例）
+        self._legend_boxes = {}
+
         # 设置样式
         self.setup_ui()
         self.setup_bindings()
@@ -278,27 +281,39 @@ class MazeVisualizer:
         legend_frame.pack(fill=tk.X, pady=(0, 10))
 
         colors_info = [
-            ("起点", self.colors['start']),
-            ("终点", self.colors['end']),
-            ("墙壁", self.colors['wall']),
-            ("路径", self.colors['path']),
-            ("已访问", self.colors['visited']),
-            ("当前", self.colors['current']),
-            ("解路径", self.colors['solution']),
-            ("边界", self.colors['frontier'])
+            ('start',    "起点"),
+            ('end',      "终点"),
+            ('wall',     "墙壁"),
+            ('path',     "路径"),
+            ('visited',  "已访问"),
+            ('current',  "当前"),
+            ('solution', "解路径"),
+            ('frontier', "边界"),
         ]
 
+        # 两列等宽展开
+        legend_frame.columnconfigure(0, weight=1)
+        legend_frame.columnconfigure(1, weight=1)
+
         # 使用网格布局
-        for i, (text, color) in enumerate(colors_info):
+        for i, (key, text) in enumerate(colors_info):
             row = i // 2
             col = i % 2
 
             frame = ttk.Frame(legend_frame)
-            frame.grid(row=row, column=col, sticky="w", padx=5, pady=1)
+            frame.grid(row=row, column=col, sticky="ew", padx=5, pady=1)
 
-            color_box = tk.Canvas(frame, width=15, height=15, bg=color, highlightthickness=0)
+            color_box = tk.Canvas(frame, width=15, height=15, bg=self.colors[key], highlightthickness=0)
             color_box.pack(side=tk.LEFT, padx=(0, 3))
+            self._legend_boxes[key] = color_box  # key 与颜色一一对应
             ttk.Label(frame, text=text, font=('Segoe UI', 9)).pack(side=tk.LEFT)
+
+        # 自定义颜色按钮
+        ttk.Button(
+            legend_frame,
+            text="🎨 自定义颜色…",
+            command=self.show_color_settings
+        ).grid(row=4, column=0, columnspan=2, sticky="ew", padx=5, pady=(8, 2))
 
         # 关于链接
         about_frame = ttk.Frame(control_frame)
@@ -1392,6 +1407,111 @@ class MazeVisualizer:
             command=about_window.destroy,
             width=15
         ).pack(pady=(5, 0))
+
+    def show_color_settings(self):
+        """打开颜色自定义窗口"""
+        from tkinter import colorchooser
+
+        win = tk.Toplevel(self.root)
+        win.title("自定义颜色")
+        win.resizable(False, False)
+
+        try:
+            win.iconbitmap(resource_path('maze.ico'))
+        except:
+            pass
+
+        color_keys = [
+            ('wall',     '墙壁'),
+            ('path',     '路径'),
+            ('start',    '起点'),
+            ('end',      '终点'),
+            ('visited',  '已访问'),
+            ('current',  '当前'),
+            ('solution', '解路径'),
+            ('frontier', '边界'),
+        ]
+
+        frame = ttk.Frame(win, padding=15)
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(
+            frame, text="点击色块或按钮选择颜色",
+            font=('Segoe UI', 9), foreground='gray'
+        ).pack(anchor=tk.W, pady=(0, 8))
+
+        popup_boxes = {}
+        color_label_map = dict(color_keys)
+
+        for key, label in color_keys:
+            row = ttk.Frame(frame)
+            row.pack(fill=tk.X, pady=3)
+
+            ttk.Label(row, text=label, width=7, font=('Segoe UI', 10)).pack(side=tk.LEFT)
+
+            box = tk.Canvas(
+                row,
+                width=40,
+                height=22,
+                bg=self.colors[key],
+                highlightthickness=1,
+                highlightbackground='#aaaaaa',
+                cursor='hand2'
+            )
+            box.pack(side=tk.LEFT, padx=8)
+            popup_boxes[key] = box
+
+            def make_picker(k, b):
+                def pick():
+                    result = colorchooser.askcolor(
+                        color=self.colors[k],
+                        title=f"选择颜色 — {color_label_map[k]}",
+                        parent=win
+                    )
+                    if result and result[1]:
+                        self.colors[k] = result[1]
+                        b.config(bg=result[1])
+                        self._refresh_legend()
+                        self.draw_maze()
+                return pick
+
+            picker = make_picker(key, box)
+            box.bind('<Button-1>', lambda e, p=picker: p())
+            ttk.Button(row, text="选择", command=picker, width=5).pack(side=tk.LEFT)
+
+        ttk.Separator(frame, orient='horizontal').pack(fill=tk.X, pady=10)
+
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(fill=tk.X)
+
+        def reset_defaults():
+            defaults = {
+                'wall': '#2c3e50', 'path': '#ecf0f1',
+                'start': '#2ecc71', 'end': '#e74c3c',
+                'visited': '#3498db', 'current': '#00ced1',
+                'solution': '#9b59b6', 'frontier': '#e67e22'
+            }
+            self.colors.update(defaults)
+            for k, b in popup_boxes.items():
+                b.config(bg=defaults[k])
+            self._refresh_legend()
+            self.draw_maze()
+
+        ttk.Button(btn_frame, text="恢复默认", command=reset_defaults).pack(
+            side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+        ttk.Button(btn_frame, text="关闭", command=win.destroy).pack(
+            side=tk.LEFT, fill=tk.X, expand=True)
+
+        # 居中显示（内容渲染完再算尺寸）
+        win.update_idletasks()
+        x = self.root.winfo_x() + (self.root.winfo_width() - win.winfo_width()) // 2
+        y = self.root.winfo_y() + (self.root.winfo_height() - win.winfo_height()) // 2
+        win.geometry(f"+{x}+{y}")
+
+    def _refresh_legend(self):
+        """同步刷新左侧颜色图例色块"""
+        for key, box in self._legend_boxes.items():
+            box.config(bg=self.colors[key])
 
     def toggle_pause(self):
         """切换暂停/继续状态"""
