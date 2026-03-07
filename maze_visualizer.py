@@ -407,6 +407,7 @@ class MazeVisualizer:
         self.canvas.bind("<Button-1>", self.on_canvas_click)
         self.canvas.bind("<B1-Motion>", self.on_canvas_drag)
         self.canvas.bind("<Button-3>", self.on_canvas_right_click)
+        self.canvas.bind("<ButtonRelease-1>", self.on_canvas_release)
 
         # 鼠标滚轮缩放
         self.canvas.bind("<MouseWheel>", self.on_mousewheel)
@@ -831,6 +832,10 @@ class MazeVisualizer:
                 self.maze[cell_y][cell_x] = 0
                 self.update_cell(cell_x, cell_y, 'path')
         self.on_canvas_motion(event)
+
+    def on_canvas_release(self, event):
+        """鼠标左键释放时重置拖拽状态"""
+        self.drag_toggle_to = None
 
     def on_mousewheel(self, event):
         """鼠标滚轮事件 - 滚动画布"""
