@@ -30,8 +30,8 @@ class MazeVisualizer:
 
         # 迷宫参数
         self.maze = []
-        self.width = 31
-        self.height = 31
+        self.width = 25
+        self.height = 25
         self.base_cell_size = 25  # 基础单元格大小
         self.start = (1, 1)
         self.end = (self.width - 2, self.height - 2)
@@ -162,7 +162,7 @@ class MazeVisualizer:
         width_frame = ttk.Frame(size_frame)
         width_frame.pack(fill=tk.X, pady=2)
         ttk.Label(width_frame, text="宽度 (奇数):").pack(side=tk.LEFT, padx=(0, 5))
-        self.width_var = tk.StringVar(value="31")
+        self.width_var = tk.StringVar(value="25")
         width_entry = ttk.Entry(width_frame, textvariable=self.width_var, width=8)
         width_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
@@ -170,7 +170,7 @@ class MazeVisualizer:
         height_frame = ttk.Frame(size_frame)
         height_frame.pack(fill=tk.X, pady=2)
         ttk.Label(height_frame, text="高度 (奇数):").pack(side=tk.LEFT, padx=(0, 5))
-        self.height_var = tk.StringVar(value="31")
+        self.height_var = tk.StringVar(value="25")
         height_entry = ttk.Entry(height_frame, textvariable=self.height_var, width=8)
         height_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
@@ -281,12 +281,12 @@ class MazeVisualizer:
         legend_frame.pack(fill=tk.X, pady=(0, 10))
 
         colors_info = [
-            ('start',    "起点"),
-            ('end',      "终点"),
-            ('wall',     "墙壁"),
-            ('path',     "路径"),
-            ('visited',  "已访问"),
-            ('current',  "当前"),
+            ('start', "起点"),
+            ('end', "终点"),
+            ('wall', "墙壁"),
+            ('path', "路径"),
+            ('visited', "已访问"),
+            ('current', "当前"),
             ('solution', "解路径"),
             ('frontier', "边界"),
         ]
@@ -1427,12 +1427,12 @@ class MazeVisualizer:
             pass
 
         color_keys = [
-            ('wall',     '墙壁'),
-            ('path',     '路径'),
-            ('start',    '起点'),
-            ('end',      '终点'),
-            ('visited',  '已访问'),
-            ('current',  '当前'),
+            ('wall', '墙壁'),
+            ('path', '路径'),
+            ('start', '起点'),
+            ('end', '终点'),
+            ('visited', '已访问'),
+            ('current', '当前'),
             ('solution', '解路径'),
             ('frontier', '边界'),
         ]
@@ -1478,6 +1478,7 @@ class MazeVisualizer:
                         b.config(bg=result[1])
                         self._refresh_legend()
                         self.draw_maze()
+
                 return pick
 
             picker = make_picker(key, box)
