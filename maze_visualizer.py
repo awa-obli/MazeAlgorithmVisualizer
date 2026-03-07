@@ -36,6 +36,7 @@ class MazeVisualizer:
         self.start = (1, 1)
         self.end = (self.width - 2, self.height - 2)
         self.cell_states = {}  # 记录每个单元格的状态
+        self.drag_toggle_to = None  # 拖拽时单向切换目标
 
         # 缩放参数
         self.zoom_level = 1.0  # 当前缩放级别
@@ -770,9 +771,11 @@ class MazeVisualizer:
             if self.maze[cell_y][cell_x] == 0:
                 self.maze[cell_y][cell_x] = 1
                 self.update_cell(cell_x, cell_y, 'wall')
+                self.drag_toggle_to = 'wall'
             else:
                 self.maze[cell_y][cell_x] = 0
                 self.update_cell(cell_x, cell_y, 'path')
+                self.drag_toggle_to = 'path'
 
     def on_canvas_right_click(self, event):
         """画布右键点击事件"""
@@ -799,7 +802,20 @@ class MazeVisualizer:
 
     def on_canvas_drag(self, event):
         """画布拖拽事件"""
-        self.on_canvas_click(event)
+        if not self.maze or self.is_generating or self.is_finding:
+            return
+        if self.drag_toggle_to is None:
+            return
+        cell = self._get_cell_at(event)
+        if cell and cell != self.start and cell != self.end:
+            cell_x, cell_y = cell
+            if self.drag_toggle_to == 'wall' and self.maze[cell_y][cell_x] == 0:
+                self.maze[cell_y][cell_x] = 1
+                self.update_cell(cell_x, cell_y, 'wall')
+            elif self.drag_toggle_to == 'path' and self.maze[cell_y][cell_x] == 1:
+                self.maze[cell_y][cell_x] = 0
+                self.update_cell(cell_x, cell_y, 'path')
+        self.on_canvas_motion(event)
 
     def on_mousewheel(self, event):
         """鼠标滚轮事件 - 滚动画布"""
